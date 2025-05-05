@@ -7,9 +7,14 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "^0.115.6"
-uvicorn = "^0.34.0"
-openai = "^1.58.1"
+fastapi = "^0.115.12"
+uvicorn = "^0.34.2"
+openai = "^1.77.0"
+langgraph = "^0.4.1"
+sqlmodel = "^0.0.24"
+sse-starlette = "^2.3.3"
+langchain-openai = "^0.3.16"
+python-dotenv = "^1.1.0"
 
 
 [build-system]

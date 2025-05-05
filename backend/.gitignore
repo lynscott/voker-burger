@@ -1,2 +1,5 @@
 poetry.lock
 .venv
+orders.db
+.env
+__pycache__/
