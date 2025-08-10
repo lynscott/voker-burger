@@ -6,6 +6,7 @@ import { base64ToBlob, playAudioBlob } from '../services/audioService'
 import Panel from './Panel'
 import { motion, AnimatePresence } from 'framer-motion'
 import ChatBubble from './ChatBubble'
+import TypingIndicator from './TypingIndicator'
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string; timestamp?: Date }
 
@@ -33,7 +34,6 @@ export default function DriveThruIntercom() {
         el.scrollTop = el.scrollHeight
       }
     }
-    // ensure layout is updated
     requestAnimationFrame(doScroll)
   }
 
@@ -101,7 +101,7 @@ export default function DriveThruIntercom() {
       chatHistoryLength.current = chatHistory.length
       smoothScrollToBottom(true)
     }
-  }, [chatHistory.length])
+  }, [chatHistory.length, isSending])
 
   return (
     <Panel className="relative flex w-full flex-col lg:h-full">
@@ -122,11 +122,14 @@ export default function DriveThruIntercom() {
                 <p className="mt-2 text-sm italic">Try asking "I'd like to order a burger" or "How many orders are active?"</p>
               </div>
             ) : (
-              <AnimatePresence initial={false}>
-                {chatHistory.map((m, idx) => (
-                  <ChatBubble key={idx} role={m.role} content={m.content} timestamp={m.timestamp} />
-                ))}
-              </AnimatePresence>
+              <>
+                <AnimatePresence initial={false}>
+                  {chatHistory.map((m, idx) => (
+                    <ChatBubble key={idx} role={m.role} content={m.content} timestamp={m.timestamp} />
+                  ))}
+                </AnimatePresence>
+                {isSending && <TypingIndicator />}
+              </>
             )}
           </div>
         </div>
