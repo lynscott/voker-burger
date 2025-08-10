@@ -3,6 +3,7 @@ import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react'
 import { useVoice } from '../context/VoiceContext'
 import { sendChat } from '../api/chat'
 import { base64ToBlob, playAudioBlob } from '../services/audioService'
+import Panel from './Panel'
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string; timestamp?: Date }
 
@@ -88,11 +89,11 @@ export default function DriveThruIntercom() {
   }, [chatHistory.length])
 
   return (
-    <div className="drive-thru-intercom relative flex w-full flex-col rounded-xl border bg-gradient-to-b from-slate-800 to-slate-900 shadow-lg lg:h-full">
-      <div className="absolute inset-x-0 top-0 flex justify-center">
+    <Panel className="relative flex w-full flex-col lg:h-full">
+      <div className="absolute inset-x-0 -top-2 flex justify-center">
         <div className="h-4 w-24 rounded-b-lg bg-slate-700"></div>
       </div>
-      <div className="flex h-full flex-col p-6">
+      <div className="flex h-full flex-col">
         <div className="flex-none flex items-center justify-center pb-2">
           <div className="rounded bg-amber-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">Order Speaker</div>
         </div>
@@ -136,6 +137,6 @@ export default function DriveThruIntercom() {
           </form>
         </div>
       </div>
-    </div>
+    </Panel>
   )
 }
