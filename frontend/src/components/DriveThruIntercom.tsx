@@ -5,6 +5,7 @@ import { sendChat } from '../api/chat'
 import { base64ToBlob, playAudioBlob } from '../services/audioService'
 import Panel from './Panel'
 import { motion, AnimatePresence } from 'framer-motion'
+import ChatBubble from './ChatBubble'
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string; timestamp?: Date }
 
@@ -110,16 +111,7 @@ export default function DriveThruIntercom() {
             ) : (
               <AnimatePresence initial={false}>
                 {chatHistory.map((m, idx) => (
-                  <motion.div key={idx} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }} className={`mb-2 ${m.role === 'user' ? 'text-right' : ''}`}>
-                    <div className={`group inline-block max-w-[85%] rounded px-3 py-2 ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'}`}>
-                      {m.content}
-                      {m.timestamp && (
-                        <span className="ml-2 hidden text-xs text-white/60 group-hover:inline">
-                          {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                    </div>
-                  </motion.div>
+                  <ChatBubble key={idx} role={m.role} content={m.content} timestamp={m.timestamp} />
                 ))}
               </AnimatePresence>
             )}
@@ -128,7 +120,6 @@ export default function DriveThruIntercom() {
         {chatError && <div className="flex-none text-center text-red-500 text-sm py-2">{chatError}</div>}
         <div className="flex-none mt-4">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            {/* Voice mode toggle inline */}
             <button
               type="button"
               onClick={() => setVoiceModeEnabled(!isVoiceModeEnabled)}
@@ -138,7 +129,6 @@ export default function DriveThruIntercom() {
             >
               {isVoiceModeEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
-            {/* Input */}
             <input
               type="text"
               value={message}
@@ -148,7 +138,6 @@ export default function DriveThruIntercom() {
               disabled={isSending || isPlayingAudio || (isVoiceModeEnabled && isListening)}
               className="flex-1 rounded-md border border-slate-600 bg-slate-700/80 px-4 py-3 text-white placeholder-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:opacity-70 disabled:cursor-not-allowed"
             />
-            {/* Mic button only in voice mode */}
             {isVoiceModeEnabled && (
               <button
                 type="button"
@@ -160,7 +149,6 @@ export default function DriveThruIntercom() {
                 {isListening ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
             )}
-            {/* Send */}
             <button
               type="submit"
               disabled={isSending || isListening || isPlayingAudio || !message.trim()}
