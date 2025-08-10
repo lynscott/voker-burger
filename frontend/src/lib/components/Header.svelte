@@ -14,13 +14,13 @@
     <!-- Main title -->
     <h1 class="neon-text relative z-10 text-4xl font-extrabold tracking-tighter text-white md:text-5xl lg:text-6xl">
       <span class="text-shadow block bg-gradient-to-b from-orange-300 to-amber-600 bg-clip-text text-transparent">
-        Voker Burger
+        Bada Bing Burgers
       </span>
     </h1>
     
     <!-- Subtitle -->
     <p class="relative z-10 mt-2 text-sm text-gray-300 md:text-base">
-      Home of the Voker Burger
+      Home of the deathly delicious White Lotus burger
     </p>
   </div>
 </header>

@@ -166,7 +166,7 @@
       <div class="h-full overflow-y-auto p-3 text-white" bind:this={chatContainer}>
         {#if $chatHistory.length === 0}
           <div class="text-center text-gray-400">
-            <p>Welcome to Voker Burger!</p>
+            <!-- <p>Welcome to Voker Burger!</p> -->
             <p class="mt-2 text-sm italic">Try asking "I'd like to order a burger" or "How many orders are active?"</p>
           </div>
         {:else}

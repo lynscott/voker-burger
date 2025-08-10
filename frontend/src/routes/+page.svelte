@@ -20,7 +20,7 @@
 </script>
 
 <svelte:head>
-  <title>Voker Burger - AI Drive-Thru</title>
+  <title>Trench Burger - AI Drive-Thru</title>
   <meta name="description" content="AI-powered virtual drive-thru experience" />
 </svelte:head>
 
@@ -68,7 +68,7 @@
   
   <!-- Footer -->
   <footer class="mt-4 flex-none text-center text-sm text-muted-foreground">
-    <p>&copy; {new Date().getFullYear()} Voker Burger Drive-Thru</p>
+    <p>&copy; {new Date().getFullYear()} Trench Burger Drive-Thru</p>
   </footer>
 </div>
 
