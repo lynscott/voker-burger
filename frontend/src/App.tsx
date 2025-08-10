@@ -22,9 +22,6 @@ function App() {
           <div className="flex min-h-0 lg:h-full lg:w-2/3"><DriveThruIntercom /></div>
           <div className="flex min-h-0 lg:h-full lg:w-1/3"><OrderBoard /></div>
         </div>
-        <footer className="mt-4 flex-none text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Bada Bing Burgers Drive-Thru</p>
-        </footer>
       </div>
     </VoiceProvider>
   )

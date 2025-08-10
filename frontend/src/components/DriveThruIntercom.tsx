@@ -126,22 +126,47 @@ export default function DriveThruIntercom() {
           </div>
         </div>
         {chatError && <div className="flex-none text-center text-red-500 text-sm py-2">{chatError}</div>}
-        <div className="flex-none mt-4 space-y-2">
-          <label className="flex items-center justify-left cursor-pointer group">
-            <input type="checkbox" checked={isVoiceModeEnabled} onChange={(e) => setVoiceModeEnabled(e.target.checked)} className="absolute opacity-0 w-0 h-0 peer" id="voice-toggle-checkbox" />
-            <span className="w-10 h-10 rounded-md border border-amber-700 bg-amber-900/50 flex items-center justify-center text-amber-400 transition-colors duration-200 ease-in-out peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-400 group-hover:border-amber-500" aria-hidden>
+        <div className="flex-none mt-4">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            {/* Voice mode toggle inline */}
+            <button
+              type="button"
+              onClick={() => setVoiceModeEnabled(!isVoiceModeEnabled)}
+              disabled={isSending || isPlayingAudio}
+              className={`flex h-10 w-10 items-center justify-center rounded-md border ${isVoiceModeEnabled ? 'border-amber-400 bg-amber-600 text-white' : 'border-amber-700 bg-amber-900/50 text-amber-400'} transition-colors`}
+              aria-label="Toggle voice mode"
+            >
               {isVoiceModeEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            </span>
-            <span className="text-xs ml-2 text-slate-300">{isVoiceModeEnabled ? 'Exit voice mode' : 'Speak to attendant'}</span>
-          </label>
-          <form onSubmit={handleSubmit} className="relative flex items-center">
-            <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} ref={inputRef} placeholder={isVoiceModeEnabled ? (isListening ? 'Listening...' : 'Press mic or type...') : 'Type your order here...'} disabled={isSending || isPlayingAudio || (isVoiceModeEnabled && isListening)} className="w-full rounded-l-lg border border-slate-600 bg-slate-700/80 px-4 py-3 pr-24 text-white placeholder-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:opacity-70 disabled:cursor-not-allowed" />
+            </button>
+            {/* Input */}
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              ref={inputRef}
+              placeholder={isVoiceModeEnabled ? (isListening ? 'Listening...' : 'Press mic or type...') : 'Type your order here...'}
+              disabled={isSending || isPlayingAudio || (isVoiceModeEnabled && isListening)}
+              className="flex-1 rounded-md border border-slate-600 bg-slate-700/80 px-4 py-3 text-white placeholder-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:opacity-70 disabled:cursor-not-allowed"
+            />
+            {/* Mic button only in voice mode */}
             {isVoiceModeEnabled && (
-              <button type="button" onClick={() => (isListening ? setVoiceModeEnabled(false) : setVoiceModeEnabled(true))} disabled={isSending || isPlayingAudio} className={`absolute right-12 flex h-10 w-10 items-center justify-center rounded-full ${isListening ? 'bg-red-600 hover:bg-red-500 ring-2 ring-red-400 animate-pulse' : 'bg-blue-600 hover:bg-blue-500'} text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed mr-1`} aria-label={isListening ? 'Stop Listening' : 'Start Listening'}>
+              <button
+                type="button"
+                onClick={() => (isListening ? setVoiceModeEnabled(false) : setVoiceModeEnabled(true))}
+                disabled={isSending || isPlayingAudio}
+                className={`flex h-10 w-10 items-center justify-center rounded-md ${isListening ? 'bg-red-600 hover:bg-red-500 ring-2 ring-red-400 animate-pulse' : 'bg-blue-600 hover:bg-blue-500'} text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+                aria-label={isListening ? 'Stop Listening' : 'Start Listening'}
+              >
                 {isListening ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
             )}
-            <button type="submit" disabled={isSending || isListening || isPlayingAudio || !message.trim()} className="absolute right-1 flex h-10 w-10 items-center justify-center rounded-r-lg bg-amber-500 text-black transition-all hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Send message">
+            {/* Send */}
+            <button
+              type="submit"
+              disabled={isSending || isListening || isPlayingAudio || !message.trim()}
+              className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-500 text-black transition-all hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Send message"
+            >
               {isSending ? <span className="animate-spin text-lg">⟳</span> : <span className="font-bold">→</span>}
             </button>
           </form>
