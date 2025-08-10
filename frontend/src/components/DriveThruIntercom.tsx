@@ -4,6 +4,7 @@ import { useVoice } from '../context/VoiceContext'
 import { sendChat } from '../api/chat'
 import { base64ToBlob, playAudioBlob } from '../services/audioService'
 import Panel from './Panel'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string; timestamp?: Date }
 
@@ -107,11 +108,20 @@ export default function DriveThruIntercom() {
                 <p className="mt-2 text-sm italic">Try asking "I'd like to order a burger" or "How many orders are active?"</p>
               </div>
             ) : (
-              chatHistory.map((m, idx) => (
-                <div key={idx} className={`mb-2 ${m.role === 'user' ? 'text-right' : ''}`}>
-                  <div className={`inline-block max-w-[85%] rounded px-3 py-2 ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'}`}>{m.content}</div>
-                </div>
-              ))
+              <AnimatePresence initial={false}>
+                {chatHistory.map((m, idx) => (
+                  <motion.div key={idx} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }} className={`mb-2 ${m.role === 'user' ? 'text-right' : ''}`}>
+                    <div className={`group inline-block max-w-[85%] rounded px-3 py-2 ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'}`}>
+                      {m.content}
+                      {m.timestamp && (
+                        <span className="ml-2 hidden text-xs text-white/60 group-hover:inline">
+                          {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </div>
