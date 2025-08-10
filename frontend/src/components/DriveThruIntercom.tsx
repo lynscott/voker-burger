@@ -22,6 +22,21 @@ export default function DriveThruIntercom() {
   const waveformRef = useRef<SVGSVGElement | null>(null)
   const chatHistoryLength = useRef(0)
 
+  const smoothScrollToBottom = (smooth = true) => {
+    const el = chatContainerRef.current
+    if (!el) return
+    const doScroll = () => {
+      try {
+        // @ts-ignore older lib types may not include behavior
+        el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
+      } catch {
+        el.scrollTop = el.scrollHeight
+      }
+    }
+    // ensure layout is updated
+    requestAnimationFrame(doScroll)
+  }
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!message.trim() || isSending || isListening || isPlayingAudio) return
@@ -69,7 +84,7 @@ export default function DriveThruIntercom() {
     waveformRef.current = createWaveform()
     if (waveformContainerRef.current && waveformRef.current) waveformContainerRef.current.appendChild(waveformRef.current)
     inputRef.current?.focus()
-    if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+    if (chatContainerRef.current) smoothScrollToBottom(false)
     return () => {
       if (waveformRef.current && waveformContainerRef.current?.contains(waveformRef.current)) waveformContainerRef.current.removeChild(waveformRef.current)
     }
@@ -84,9 +99,7 @@ export default function DriveThruIntercom() {
   useEffect(() => {
     if (chatHistory.length !== chatHistoryLength.current) {
       chatHistoryLength.current = chatHistory.length
-      setTimeout(() => {
-        if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-      }, 0)
+      smoothScrollToBottom(true)
     }
   }, [chatHistory.length])
 
