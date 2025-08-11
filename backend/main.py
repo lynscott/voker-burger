@@ -55,9 +55,9 @@ class OrderResponse(BaseModel):
 
 # Agent instance
 agent = AttendantAgent()
-DEFAULT_SESSION_ID = "voker_session"
+DEFAULT_SESSION_ID = "bada_bing_session"
 INITIAL_GREETING_MESSAGE = "__INITIAL_GREETING__"
-GREETING_TEXT = "Welcome to Trench burger home of the lotus burger, my name is Carl, whaddya want?"
+GREETING_TEXT = "Welcome to Bada Bing Burger, my name is Carl, whaddya want?"
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):

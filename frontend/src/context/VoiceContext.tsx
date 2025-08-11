@@ -8,6 +8,10 @@ interface VoiceContextValue {
   isListening: boolean
   isPlayingAudio: boolean
   interimTranscript: string
+  finalTranscript: string
+  consumeFinalTranscript: () => string
+  startListeningIfEnabled: () => void
+  setPlaybackActive: (active: boolean) => void
   stopAudioPlayback: () => void
   base64ToBlob: (b64: string) => Blob | null
 }
@@ -19,10 +23,37 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const [isListening, setIsListening] = useState(false)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const [interimTranscript, setInterimTranscript] = useState('')
+  const [finalTranscript, setFinalTranscript] = useState('')
+
+  const consumeFinalTranscript = useCallback(() => {
+    const text = finalTranscript
+    if (text) setFinalTranscript('')
+    return text
+  }, [finalTranscript])
 
   const stopAudioPlayback = useCallback(() => {
     svcStopAudioPlayback()
     setIsPlayingAudio(false)
+  }, [])
+
+  const startListeningIfEnabled = useCallback(() => {
+    if (!isVoiceModeEnabled || isPlayingAudio) return
+    svcStartListening({
+      onInterim: setInterimTranscript,
+      onFinal: (text) => {
+        setInterimTranscript('')
+        setFinalTranscript(text)
+      },
+      onListeningChange: setIsListening,
+      onError: (m) => {
+        console.warn('startListening error:', m)
+        setIsListening(false)
+      }
+    })
+  }, [isVoiceModeEnabled, isPlayingAudio])
+
+  const setPlaybackActive = useCallback((active: boolean) => {
+    setIsPlayingAudio(active)
   }, [])
 
   const startGreetingFlow = useCallback(async () => {
@@ -36,18 +67,21 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       setIsPlayingAudio(true)
       const blob = await requestGreeting()
       await playAudioBlob(blob, () => setIsPlayingAudio(false))
-      // Next tick to avoid race with audio teardown
-      requestAnimationFrame(() => {
+      // Start listening directly after a tick to avoid stale isPlayingAudio closure
+      setTimeout(() => {
         svcStartListening({
           onInterim: setInterimTranscript,
-          onFinal: () => {},
+          onFinal: (text) => {
+            setInterimTranscript('')
+            setFinalTranscript(text)
+          },
           onListeningChange: setIsListening,
           onError: (m) => {
             console.warn('startListening error:', m)
             setIsListening(false)
           }
         })
-      })
+      }, 0)
     } catch {
       setVoiceModeEnabled(false)
       setIsListening(false)
@@ -64,6 +98,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       if (isListening) svcStopListening({ onListeningChange: setIsListening })
       stopAudioPlayback()
       setInterimTranscript('')
+      setFinalTranscript('')
     }
   }, [isListening, startGreetingFlow, stopAudioPlayback])
 
@@ -73,9 +108,13 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     isListening,
     isPlayingAudio,
     interimTranscript,
+    finalTranscript,
+    consumeFinalTranscript,
+    startListeningIfEnabled,
+    setPlaybackActive,
     stopAudioPlayback,
     base64ToBlob,
-  }), [isVoiceModeEnabled, setVoiceModeAndMaybeStart, isListening, isPlayingAudio, interimTranscript, stopAudioPlayback])
+  }), [isVoiceModeEnabled, setVoiceModeAndMaybeStart, isListening, isPlayingAudio, interimTranscript, finalTranscript, consumeFinalTranscript, startListeningIfEnabled, setPlaybackActive, stopAudioPlayback])
 
   return <VoiceContext.Provider value={value}>{children}</VoiceContext.Provider>
 }

@@ -1,4 +1,3 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 
 export default function Header() {
@@ -9,9 +8,6 @@ export default function Header() {
           Bada Bing Burgers
         </span>
       </h1>
-      <p className="relative z-10 mt-2 text-sm text-gray-300 md:text-base">
-        Home of the deathly delicious White Lotus burger
-      </p>
     </motion.div>
   )
 }

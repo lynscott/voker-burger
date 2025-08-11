@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import type { Order } from '../types/orders'
 
 export default function OrderTicket({ order }: { order: Order }) {

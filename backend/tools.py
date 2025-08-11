@@ -39,7 +39,7 @@ class CancelOrderInput(BaseModel):
 def place_order_tool(input: PlaceOrderInput) -> str:
     """Places a new food order with the specified items and quantities. Use this tool for new orders."""
     try:
-        details_list = [detail.dict() for detail in input.details]
+        details_list = [detail.model_dump() for detail in input.details]
         new_order = service_create_order(details=details_list)
         return f"Order placed successfully! Your order ID is {new_order.id}. Details: {new_order.details}. Total items: {new_order.total_items}."
     except ValueError as e:

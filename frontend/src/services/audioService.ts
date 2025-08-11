@@ -54,8 +54,10 @@ export function base64ToBlob(base64: string, contentType = 'audio/mpeg'): Blob |
 }
 
 // --- Web Speech API ---
-let RecognitionCtor: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-let recognition: SpeechRecognition | null = null
+// Minimal ambient typings for SpeechRecognition across browsers
+type BrowserSpeechRecognition = any
+let RecognitionCtor: BrowserSpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+let recognition: BrowserSpeechRecognition | null = null
 
 export interface SpeechCallbacks {
   onInterim?: (text: string) => void
@@ -79,10 +81,10 @@ export async function ensureSpeechReady(): Promise<boolean> {
   }
 }
 
-function buildRecognition(): SpeechRecognition | null {
+function buildRecognition(): BrowserSpeechRecognition | null {
   try {
     if (!RecognitionCtor) return null
-    const rec: SpeechRecognition = new RecognitionCtor()
+    const rec: BrowserSpeechRecognition = new RecognitionCtor()
     rec.continuous = false
     rec.lang = 'en-US'
     rec.interimResults = true

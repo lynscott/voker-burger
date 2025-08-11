@@ -1,4 +1,3 @@
-import React from 'react'
 import Header from './components/Header'
 import StatsCounter from './components/StatsCounter'
 import DriveThruIntercom from './components/DriveThruIntercom'

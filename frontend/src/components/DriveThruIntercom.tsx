@@ -1,26 +1,26 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { Volume2, VolumeX } from 'lucide-react'
 import { useVoice } from '../context/VoiceContext'
 import { sendChat } from '../api/chat'
-import { base64ToBlob, playAudioBlob } from '../services/audioService'
+import { base64ToBlob, playAudioBlob, resumeAudioContext } from '../services/audioService'
 import Panel from './Panel'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import ChatBubble from './ChatBubble'
 import TypingIndicator from './TypingIndicator'
+import { useToast } from '../context/ToastContext'
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string; timestamp?: Date }
 
 export default function DriveThruIntercom() {
-  const { isVoiceModeEnabled, setVoiceModeEnabled, isListening, isPlayingAudio } = useVoice()
+  const { isVoiceModeEnabled, setVoiceModeEnabled, isListening, isPlayingAudio, interimTranscript, finalTranscript, consumeFinalTranscript, startListeningIfEnabled, setPlaybackActive } = useVoice()
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   const chatContainerRef = useRef<HTMLDivElement | null>(null)
-  const waveformContainerRef = useRef<HTMLDivElement | null>(null)
-  const waveformRef = useRef<SVGSVGElement | null>(null)
   const chatHistoryLength = useRef(0)
 
   const smoothScrollToBottom = (smooth = true) => {
@@ -37,23 +37,35 @@ export default function DriveThruIntercom() {
     requestAnimationFrame(doScroll)
   }
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!message.trim() || isSending || isListening || isPlayingAudio) return
-    const userMsg: ChatMessage = { role: 'user', content: message, timestamp: new Date() }
+  const sendText = async (text: string, _fromVoice: boolean) => {
+    if (!text.trim() || isSending) return
+    const userMsg: ChatMessage = { role: 'user', content: text, timestamp: new Date() }
     setChatHistory(h => [...h, userMsg])
     setIsSending(true)
     setChatError(null)
     try {
-      const resp = await sendChat(message, isVoiceModeEnabled)
+      const resp = await sendChat(text, isVoiceModeEnabled)
       let replyText = resp.reply || ''
       if (resp.audio) {
-        const blob = base64ToBlob(resp.audio)
-        if (blob) await playAudioBlob(blob)
+        try {
+          await resumeAudioContext()
+          const blob = base64ToBlob(resp.audio)
+          if (blob) {
+            setPlaybackActive(true)
+            await playAudioBlob(blob, () => setPlaybackActive(false))
+          } else {
+            showToast('Audio unavailable. Continuing in text mode.', 'warning')
+          }
+        } catch (e: any) {
+          showToast('Could not play audio reply. Continuing in text mode.', 'error')
+          setPlaybackActive(false)
+        }
       }
       setChatHistory(h => [...h, { role: 'assistant', content: replyText, timestamp: new Date() }])
+      if (isVoiceModeEnabled) requestAnimationFrame(() => startListeningIfEnabled())
     } catch (err: any) {
       setChatError(err?.message || 'Failed to send message')
+      showToast('Message failed. Please try again.', 'error')
     } finally {
       setIsSending(false)
       setMessage('')
@@ -61,40 +73,18 @@ export default function DriveThruIntercom() {
     }
   }
 
-  const createWaveform = () => {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    svg.setAttribute('viewBox', '0 0 100 20')
-    svg.setAttribute('width', '100%')
-    svg.setAttribute('height', '100%')
-    svg.classList.add('waveform')
-    for (let i = 0; i < 5; i++) {
-      const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-      bar.setAttribute('x', String(i * 20 + 10))
-      bar.setAttribute('y', '9')
-      bar.setAttribute('width', '3')
-      bar.setAttribute('height', '1')
-      bar.setAttribute('fill', 'currentColor')
-      bar.classList.add('waveform-bar')
-      svg.appendChild(bar)
-    }
-    return svg
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (isListening || isPlayingAudio) return
+    await sendText(message, false)
   }
 
   useEffect(() => {
-    waveformRef.current = createWaveform()
-    if (waveformContainerRef.current && waveformRef.current) waveformContainerRef.current.appendChild(waveformRef.current)
     inputRef.current?.focus()
     if (chatContainerRef.current) smoothScrollToBottom(false)
-    return () => {
-      if (waveformRef.current && waveformContainerRef.current?.contains(waveformRef.current)) waveformContainerRef.current.removeChild(waveformRef.current)
-    }
   }, [])
 
-  useEffect(() => {
-    if (!waveformRef.current) return
-    if (isSending || isPlayingAudio) waveformRef.current.classList.add('animate')
-    else waveformRef.current.classList.remove('animate')
-  }, [isSending, isPlayingAudio])
+  // no-op: waveform removed
 
   useEffect(() => {
     if (chatHistory.length !== chatHistoryLength.current) {
@@ -103,6 +93,23 @@ export default function DriveThruIntercom() {
     }
   }, [chatHistory.length, isSending])
 
+  useEffect(() => {
+    if (isListening && interimTranscript) {
+      setMessage(interimTranscript)
+    } else if (!isListening && message === interimTranscript) {
+      setMessage('')
+    }
+  }, [isListening, interimTranscript])
+
+  useEffect(() => {
+    if (!finalTranscript) return
+    const text = consumeFinalTranscript()
+    if (text) {
+      setMessage(text)
+      sendText(text, true)
+    }
+  }, [finalTranscript])
+
   return (
     <Panel className="relative flex w-full flex-col lg:h-full">
       <div className="absolute inset-x-0 -top-2 flex justify-center">
@@ -110,16 +117,31 @@ export default function DriveThruIntercom() {
       </div>
       <div className="flex h-full flex-col">
         <div className="flex-none flex items-center justify-center pb-2">
-          <div className="rounded bg-amber-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">Order Speaker</div>
+          <button
+            type="button"
+            onClick={() => setVoiceModeEnabled(!isVoiceModeEnabled)}
+            aria-pressed={isVoiceModeEnabled}
+            className={`inline-flex items-center gap-2 rounded px-3 py-1 text-xs font-bold uppercase tracking-wider border ${
+              isVoiceModeEnabled ? 'bg-amber-500 text-black border-amber-400' : 'bg-amber-900/40 text-amber-300 border-amber-700'
+            } ${isVoiceModeEnabled && isListening ? 'ring-2 ring-emerald-400 shadow-lg shadow-emerald-400/30 animate-pulse' : ''}`}
+          >
+            {isVoiceModeEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            {isVoiceModeEnabled ? 'Order Speaker (On Air)' : 'Order Speaker'}
+            {(isListening || isPlayingAudio || isSending) && (
+              <span className="ml-2 inline-flex items-end gap-0.5" aria-hidden>
+                <span className="h-2 w-0.5 bg-black/60 animate-[equalize_1s_ease-in-out_infinite]" />
+                <span className="h-3 w-0.5 bg-black/60 animate-[equalize_1s_ease-in-out_infinite_.15s]" />
+                <span className="h-1.5 w-0.5 bg-black/60 animate-[equalize_1s_ease-in-out_infinite_.3s]" />
+              </span>
+            )}
+          </button>
         </div>
-        <div className="flex-none mx-auto h-8 w-32 text-amber-500 pb-2 flex items-center justify-center" ref={waveformContainerRef}>
-          {isPlayingAudio && <Volume2 className="h-5 w-5 animate-pulse text-amber-400 ml-2" />}
-        </div>
+        {/* Removed external waveform area; equalizer is integrated in the button */}
         <div className="flex-1 min-h-0 overflow-hidden rounded-lg bg-black/30">
           <div className="h-full overflow-y-auto p-3 text-white" ref={chatContainerRef}>
             {chatHistory.length === 0 ? (
               <div className="text-center text-gray-400">
-                <p className="mt-2 text-sm italic">Try asking "I'd like to order a burger" or "How many orders are active?"</p>
+                <p className="mt-2 text-sm italic">Press Order Speaker to talk, or type below</p>
               </div>
             ) : (
               <>
@@ -136,42 +158,40 @@ export default function DriveThruIntercom() {
         {chatError && <div className="flex-none text-center text-red-500 text-sm py-2">{chatError}</div>}
         <div className="flex-none mt-4">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setVoiceModeEnabled(!isVoiceModeEnabled)}
-              disabled={isSending || isPlayingAudio}
-              className={`flex h-10 w-10 items-center justify-center rounded-md border ${isVoiceModeEnabled ? 'border-amber-400 bg-amber-600 text-white' : 'border-amber-700 bg-amber-900/50 text-amber-400'} transition-colors`}
-              aria-label="Toggle voice mode"
-            >
-              {isVoiceModeEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            </button>
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               ref={inputRef}
-              placeholder={isVoiceModeEnabled ? (isListening ? 'Listening...' : 'Press mic or type...') : 'Type your order here...'}
+              placeholder={isVoiceModeEnabled ? (isListening ? 'Listening...' : 'Press Order Speaker to talk...') : 'Type your order here...'}
               disabled={isSending || isPlayingAudio || (isVoiceModeEnabled && isListening)}
-              className="flex-1 rounded-md border border-slate-600 bg-slate-700/80 px-4 py-3 text-white placeholder-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:opacity-70 disabled:cursor-not-allowed"
+              aria-busy={isVoiceModeEnabled && isListening}
+              className={`flex-1 rounded-md border px-4 py-3 text-white placeholder-slate-400 focus-visible:outline-none disabled:opacity-70 disabled:cursor-not-allowed ${
+                isVoiceModeEnabled && isListening
+                  ? 'border-emerald-500/70 bg-emerald-900/20 ring-1 ring-emerald-500'
+                  : 'border-slate-600 bg-slate-700/80 focus-visible:ring-1 focus-visible:ring-amber-500'
+              }`}
             />
-            {isVoiceModeEnabled && (
-              <button
-                type="button"
-                onClick={() => (isListening ? setVoiceModeEnabled(false) : setVoiceModeEnabled(true))}
-                disabled={isSending || isPlayingAudio}
-                className={`flex h-10 w-10 items-center justify-center rounded-md ${isListening ? 'bg-red-600 hover:bg-red-500 ring-2 ring-red-400 animate-pulse' : 'bg-blue-600 hover:bg-blue-500'} text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-                aria-label={isListening ? 'Stop Listening' : 'Start Listening'}
-              >
-                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-              </button>
-            )}
             <button
               type="submit"
               disabled={isSending || isListening || isPlayingAudio || !message.trim()}
               className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-500 text-black transition-all hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send message"
             >
-              {isSending ? <span className="animate-spin text-lg">⟳</span> : <span className="font-bold">→</span>}
+              {isSending ? (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
+                  <defs>
+                    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#fbbf24" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="12" cy="12" r="9" stroke="url(#ring)" strokeWidth="3" fill="none" opacity="0.35" />
+                  <path d="M21 12a9 9 0 0 0-9-9" stroke="url(#ring)" strokeWidth="3" strokeLinecap="round" fill="none" className="animate-spin origin-center" />
+                </svg>
+              ) : (
+                <span className="font-bold">→</span>
+              )}
             </button>
           </form>
         </div>

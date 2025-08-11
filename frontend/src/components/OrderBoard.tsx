@@ -1,4 +1,3 @@
-import React from 'react'
 import { useOrders } from '../hooks/useOrders'
 import OrderTicket from './OrderTicket'
 import Panel from './Panel'

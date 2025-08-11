@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function StatsCounter({ icon, label, value }: { icon: string; label: string; value: number }) {
   const prev = useRef(value)
