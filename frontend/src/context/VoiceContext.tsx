@@ -32,18 +32,11 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         setVoiceModeEnabled(false)
         return
       }
-      setIsListening(true)
-      // Start initial listening and request greeting audio
-      svcStartListening({
-        onInterim: setInterimTranscript,
-        onFinal: () => {},
-        onListeningChange: setIsListening,
-        onError: () => setVoiceModeEnabled(false)
-      })
-      const blob = await requestGreeting()
+      // 1) Play greeting first
       setIsPlayingAudio(true)
+      const blob = await requestGreeting()
       await playAudioBlob(blob, () => setIsPlayingAudio(false))
-      // restart listening after greeting
+      // 2) Then start listening after greeting completes
       svcStartListening({
         onInterim: setInterimTranscript,
         onFinal: () => {},
@@ -52,6 +45,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       })
     } catch {
       setVoiceModeEnabled(false)
+      setIsListening(false)
+      setIsPlayingAudio(false)
     }
   }, [])
 
