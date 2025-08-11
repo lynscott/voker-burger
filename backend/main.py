@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AnyMessage
 from order_service import create_db_and_tables, get_orders
 from tools import Order, OrderStatus, MENU
@@ -105,3 +106,17 @@ async def get_orders_endpoint():
     except Exception as e:
         print(f"Error in /orders endpoint: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve order data.")
+ 
+# --- Static files (single-container) ---
+STATIC_DIR = os.getenv("STATIC_DIR")
+if STATIC_DIR and os.path.isdir(STATIC_DIR):
+    # Serve built frontend assets; mount after API routes so APIs take precedence
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
+    # SPA fallback: send index.html for any non-API route
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        index_path = os.path.join(STATIC_DIR, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        raise HTTPException(status_code=404, detail="Not Found")

@@ -34,6 +34,23 @@ npm run dev -- --host
 
 Open: `http://localhost:5173` (frontend) and `http://localhost:8000/docs` (API docs).
 
+### Docker Quickstart (single container)
+
+Prereq: Create `.env` at repo root with your key
+
+```
+OPENAI_API_KEY=sk-...your key...
+```
+
+Build and run
+
+```
+docker build -t drive-thru .
+docker run --env-file .env -p 8000:8000 drive-thru
+```
+
+Open `http://localhost:8000` (frontend is served by the backend). API docs are at `http://localhost:8000/docs`.
+
 ### Key Features
 
 - AI attendant powered by LangGraph + OpenAI Chat
