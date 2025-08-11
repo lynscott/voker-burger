@@ -36,7 +36,7 @@ Open: `http://localhost:5173` (frontend) and `http://localhost:8000/docs` (API d
 
 ### Docker Quickstart (single container)
 
-Prereq: Create `.env` at repo root with your key
+Prereq: Create `.env` at repo root with your key (see `.env.example`)
 
 ```
 OPENAI_API_KEY=sk-...your key...

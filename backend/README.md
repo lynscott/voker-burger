@@ -48,7 +48,7 @@ Requirements: Python 3.11+ (pyenv recommended), Poetry
 cd backend
 poetry install --no-root
 
-# .env must contain
+# Root .env must contain (see /.env.example)
 # OPENAI_API_KEY=sk-...
 
 poetry run uvicorn main:app --reload --host 0.0.0.0

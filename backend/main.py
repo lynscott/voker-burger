@@ -1,6 +1,6 @@
 import os
 from typing import List, Dict
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
@@ -12,7 +12,7 @@ from tools import Order, OrderStatus, MENU
 from agent import AttendantAgent
 import base64
 
-load_dotenv()
+load_dotenv(find_dotenv())
 if not os.getenv("OPENAI_API_KEY"):
     print("Warning: OPENAI_API_KEY not found in environment variables.")
 
