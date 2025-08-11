@@ -17,39 +17,40 @@ A modern AI-powered drive‑thru built with FastAPI (Python) and React + Vite (T
 
 ### Quickstart
 
-Backend
+Recommended: Docker (single container)
+- Requirements: Docker Desktop (macOS/Windows) or Docker Engine + a running daemon
+- Steps:
+  1) Create `.env` at repo root (see `.env.example`):
+     - `OPENAI_API_KEY=sk-...`
+  2) Using the Makefile helpers:
+     - `make docker-up` → builds and runs the container on port 8000
+     - `make docker-logs` → tails logs, `make docker-down` → stop/remove
+  3) Open `http://localhost:8000` (frontend) and `http://localhost:8000/docs` (API)
+
+Manual Docker (alternative):
+```bash
+docker build -t drive-thru .
+docker run --env-file .env -p 8000:8000 drive-thru
+```
+
+Local development (separate FE/BE)
+- Requirements:
+  - Backend: Python 3.11+, Poetry, OpenAI API key in root `.env`
+  - Frontend: Node 20+, npm
+- Backend:
 ```bash
 cd backend
 poetry install --no-root
-# Ensure .env contains OPENAI_API_KEY
 poetry run uvicorn main:app --reload --host 0.0.0.0
 ```
-
-Frontend
+- Frontend:
 ```bash
 cd frontend
 npm install
 npm run dev -- --host
 ```
 
-Open: `http://localhost:5173` (frontend) and `http://localhost:8000/docs` (API docs).
-
-### Docker Quickstart (single container)
-
-Prereq: Create `.env` at repo root with your key (see `.env.example`)
-
-```
-OPENAI_API_KEY=sk-...your key...
-```
-
-Build and run
-
-```
-docker build -t drive-thru .
-docker run --env-file .env -p 8000:8000 drive-thru
-```
-
-Open `http://localhost:8000` (frontend is served by the backend). API docs are at `http://localhost:8000/docs`.
+Open: `http://localhost:5173` (frontend) and `http://localhost:8000/docs` (API).
 
 ### Key Features
 
