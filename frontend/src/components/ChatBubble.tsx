@@ -15,12 +15,12 @@ export default function ChatBubble({ role, content, timestamp }: { role: ChatRol
       transition={{ duration: 0.16, ease: 'easeOut' }}
       className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}
     >
-      <div className={`bubble ${isUser ? 'bubble-user' : 'bubble-assistant'} group max-w-[85%]`}
+      <div className={`bubble ${isUser ? 'bubble-user' : 'bubble-assistant'} max-w-[85%]`}
            aria-label={time ? `Sent at ${time}` : undefined}
       >
-        <span className="leading-relaxed break-words">{content}</span>
+        <span className="leading-relaxed break-words align-middle">{content}</span>
         {time && (
-          <span className="ml-2 hidden text-xs text-white/70 group-hover:inline align-bottom">{time}</span>
+          <span className="ml-2 text-xs text-white/70 align-middle">{time}</span>
         )}
       </div>
     </motion.div>
