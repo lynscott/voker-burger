@@ -44,7 +44,7 @@ class AttendantAgent:
 
         # Build tools and model
         tool_node = ToolNode(tools)
-        model = ChatOpenAI(temperature=temperature, streaming=streaming, model=model_name, reasoning_effort="low")
+        model = ChatOpenAI(temperature=temperature, streaming=streaming, model=model_name)
         model = model.bind_tools(tools)
 
         # Summarizer chain
