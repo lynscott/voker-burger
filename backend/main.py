@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import time
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from langchain_core.messages import AnyMessage
 from order_service import create_db_and_tables, get_orders
 from tools import Order, OrderStatus, MENU
 from agent import AttendantAgent
