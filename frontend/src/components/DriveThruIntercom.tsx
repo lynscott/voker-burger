@@ -84,7 +84,6 @@ export default function DriveThruIntercom() {
     if (chatContainerRef.current) smoothScrollToBottom(false)
   }, [])
 
-  // no-op: waveform removed
 
   useEffect(() => {
     if (chatHistory.length !== chatHistoryLength.current) {
@@ -136,7 +135,6 @@ export default function DriveThruIntercom() {
             )}
           </button>
         </div>
-        {/* Removed external waveform area; equalizer is integrated in the button */}
         <div className="flex-1 min-h-0 overflow-hidden rounded-lg bg-black/30">
           <div className="h-full overflow-y-auto p-3 text-white" ref={chatContainerRef}>
             {chatHistory.length === 0 ? (
