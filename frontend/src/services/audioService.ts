@@ -1,6 +1,13 @@
 let audioContext: AudioContext | null = null
 let currentAudioSource: AudioBufferSourceNode | null = null
 
+export async function resumeAudioContext(): Promise<void> {
+  if (!audioContext) return
+  if (audioContext.state === 'suspended') {
+    try { await audioContext.resume() } catch {}
+  }
+}
+
 function getAudioContext(): AudioContext {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
@@ -72,12 +79,32 @@ export async function ensureSpeechReady(): Promise<boolean> {
   }
 }
 
-export function startListening(callbacks: SpeechCallbacks) {
+function buildRecognition(): SpeechRecognition | null {
+  try {
+    if (!RecognitionCtor) return null
+    const rec: SpeechRecognition = new RecognitionCtor()
+    rec.continuous = false
+    rec.lang = 'en-US'
+    rec.interimResults = true
+    rec.maxAlternatives = 1
+    return rec
+  } catch {
+    return null
+  }
+}
+
+export async function startListening(callbacks: SpeechCallbacks) {
   if (!recognition) {
-    callbacks.onError?.('Mic not ready. Please toggle voice mode.')
+    recognition = buildRecognition()
+  }
+  if (!recognition) {
+    callbacks.onError?.('Mic not ready. Please toggle voice mode or allow microphone.')
     callbacks.onListeningChange?.(false)
     return
   }
+  // Resume audio context for Safari/iOS quirks
+  try { await resumeAudioContext() } catch {}
+
   callbacks.onListeningChange?.(true)
   callbacks.onInterim?.('')
 
@@ -92,14 +119,27 @@ export function startListening(callbacks: SpeechCallbacks) {
     if (finalTranscript.trim()) callbacks.onFinal?.(finalTranscript.trim())
   }
   recognition.onerror = (ev: any) => {
-    let msg = `Speech error: ${ev.error}`
-    callbacks.onError?.(msg)
+    const code = ev?.error || 'unknown'
+    const fatal = code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture'
+    callbacks.onError?.(`Speech error: ${code}`)
     callbacks.onListeningChange?.(false)
-    recognition = null
+    if (fatal) {
+      // Force rebuild next time
+      recognition = null
+    }
   }
   recognition.onend = () => {
     callbacks.onListeningChange?.(false)
   }
+  recognition.onnomatch = () => {
+    // No clear speech detected
+    callbacks.onInterim?.('')
+  }
+  recognition.onaudiostart = () => {}
+  recognition.onspeechstart = () => {}
+  recognition.onspeechend = () => {}
+  recognition.onaudioend = () => {}
+
   try {
     recognition.start()
   } catch (e: any) {

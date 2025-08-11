@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { ensureSpeechReady, startListening as svcStartListening, stopListening as svcStopListening, playAudioBlob, stopAudioPlayback as svcStopAudioPlayback, base64ToBlob } from '../services/audioService'
+import { ensureSpeechReady, startListening as svcStartListening, stopListening as svcStopListening, playAudioBlob, stopAudioPlayback as svcStopAudioPlayback, base64ToBlob, resumeAudioContext } from '../services/audioService'
 import { requestGreeting } from '../api/chat'
 
 interface VoiceContextValue {
@@ -32,16 +32,21 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         setVoiceModeEnabled(false)
         return
       }
-      // 1) Play greeting first
+      await resumeAudioContext()
       setIsPlayingAudio(true)
       const blob = await requestGreeting()
       await playAudioBlob(blob, () => setIsPlayingAudio(false))
-      // 2) Then start listening after greeting completes
-      svcStartListening({
-        onInterim: setInterimTranscript,
-        onFinal: () => {},
-        onListeningChange: setIsListening,
-        onError: () => setVoiceModeEnabled(false)
+      // Next tick to avoid race with audio teardown
+      requestAnimationFrame(() => {
+        svcStartListening({
+          onInterim: setInterimTranscript,
+          onFinal: () => {},
+          onListeningChange: setIsListening,
+          onError: (m) => {
+            console.warn('startListening error:', m)
+            setIsListening(false)
+          }
+        })
       })
     } catch {
       setVoiceModeEnabled(false)
@@ -50,10 +55,12 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const setVoiceModeAndMaybeStart = useCallback((enabled: boolean) => {
+  const setVoiceModeAndMaybeStart = useCallback(async (enabled: boolean) => {
     setVoiceModeEnabled(enabled)
-    if (enabled) startGreetingFlow()
-    else {
+    if (enabled) {
+      await resumeAudioContext()
+      startGreetingFlow()
+    } else {
       if (isListening) svcStopListening({ onListeningChange: setIsListening })
       stopAudioPlayback()
       setInterimTranscript('')
