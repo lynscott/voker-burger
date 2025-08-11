@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir poetry
 
 # Install backend deps first (cache layer)
 COPY backend/pyproject.toml ./
+COPY backend/poetry.lock ./
 RUN poetry install --no-root --no-ansi
 
 # Copy backend source
