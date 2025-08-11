@@ -3,9 +3,20 @@ CONTAINER_NAME ?= drive-thru
 PORT ?= 8000
 ENV_FILE ?= .env
 
-.PHONY: docker-build docker-up docker-down docker-logs docker-rebuild docker-status
+.PHONY: docker-build docker-up docker-down docker-logs docker-rebuild docker-status docker-check
 
-docker-build:
+docker-check:
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "[error] Docker CLI not found. Install Docker Desktop: brew install --cask docker"; \
+		echo "        Or use Colima: brew install colima docker && colima start"; \
+		exit 127; \
+	}
+	@docker info >/dev/null 2>&1 || { \
+		echo "[error] Docker daemon not running. Start Docker Desktop (or run: colima start) and retry."; \
+		exit 1; \
+	}
+
+docker-build: docker-check
 	@echo "[build] Building image $(DOCKER_IMAGE) ..."
 	docker build -t $(DOCKER_IMAGE) .
 
